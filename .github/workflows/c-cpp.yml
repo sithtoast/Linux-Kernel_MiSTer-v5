@@ -1,0 +1,21 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "MiSTer-v5.15" ]
+  pull_request:
+    branches: [ "MiSTer-v5.15" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: make
+      run: make -j3 zImage
+    - name: make
+      run: make arch/arm/boot/dts/socfpga_cyclone5_de10_nano.dtb
+    - name: zImage
+      run: cat arch/arm/boot/zImage arch/arm/boot/dts/socfpga_cyclone5_de10_nano.dtb > zImage_dtb
