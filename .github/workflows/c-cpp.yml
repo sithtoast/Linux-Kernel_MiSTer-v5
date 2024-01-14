@@ -20,7 +20,7 @@ jobs:
         ARCH: "arm"
         LOCALVERSION: "MiSTer"
     - name: make menuconfig
-      run: make menuconfig
+      run: make MiSTer_defconfig
     - name: make
       run: make -j3 zImage
     - name: make
