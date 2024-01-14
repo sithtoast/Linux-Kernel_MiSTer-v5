@@ -15,15 +15,11 @@ jobs:
     - uses: actions/checkout@v3
     - name: wget
       run: wget -c https://releases.linaro.org/components/toolchain/binaries/6.5-2018.12/arm-linux-gnueabihf/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf.tar.xz && cat gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf.tar.xz | tar xJ
-      env: 
-        CROSS_COMPILE: "$GITHUB_WORKSPACE/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-"
-        ARCH: arm
-        LOCALVERSION: MiSTer
     - name: make menuconfig
-      run: make MiSTer_defconfig
+      run: make ARCH=arm EXTRAVERSION=-MiSTer MiSTer_defconfig
     - name: make
-      run: make -j3 zImage
+      run: make ARCH=arm EXTRAVERSION=-MiSTer CROSS_COMPILE=/opt/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- -j3 zImage
     - name: make
-      run: make arch/arm/boot/dts/socfpga_cyclone5_de10_nano.dtb
+      run: make ARCH=arm EXTRAVERSION=-MiSTer CROSS_COMPILE=/opt/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- arch/arm/boot/dts/socfpga_cyclone5_de10_nano.dtb
     - name: zImage
       run: cat arch/arm/boot/zImage arch/arm/boot/dts/socfpga_cyclone5_de10_nano.dtb > zImage_dtb
