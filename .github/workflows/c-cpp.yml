@@ -19,6 +19,8 @@ jobs:
         CROSS_COMPILE: "$GITHUB_WORKSPACE/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-"
         ARCH: "arm"
         LOCALVERSION: "MiSTer"
+    - name: make menuconfig
+      run: make menuconfig
     - name: make
       run: make -j3 zImage
     - name: make
