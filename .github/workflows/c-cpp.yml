@@ -23,3 +23,8 @@ jobs:
       run: make ARCH=arm EXTRAVERSION=-MiSTer CROSS_COMPILE=$GITHUB_WORKSPACE/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- socfpga_cyclone5_de10_nano.dtb
     - name: zImage
       run: cat $GITHUB_WORKSPACE/arch/arm/boot/zImage $GITHUB_WORKSPACE/arch/arm/boot/dts/socfpga_cyclone5_de10_nano.dtb > $GITHUB_WORKSPACE/zImage_dtb
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: zImage_dtb
+        path: zImage_dtb
