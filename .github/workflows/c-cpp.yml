@@ -17,8 +17,8 @@ jobs:
       run: wget -c https://releases.linaro.org/components/toolchain/binaries/6.5-2018.12/arm-linux-gnueabihf/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf.tar.xz && cat gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf.tar.xz | tar xJ
       env: 
         CROSS_COMPILE: "$GITHUB_WORKSPACE/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-"
-        ARCH: "arm"
-        LOCALVERSION: "MiSTer"
+        ARCH: arm
+        LOCALVERSION: MiSTer
     - name: make menuconfig
       run: make MiSTer_defconfig
     - name: make
