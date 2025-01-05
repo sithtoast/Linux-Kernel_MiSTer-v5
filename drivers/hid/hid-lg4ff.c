@@ -22,7 +22,7 @@
 #include "hid-lg4ff.h"
 #include "hid-ids.h"
 
-#define LG4FF_VERSION "0.3.3"
+#define LG4FF_VERSION "0.4.1"
 
 #define LG4FF_MMODE_IS_MULTIMODE 0
 #define LG4FF_MMODE_SWITCHED 1
@@ -35,7 +35,9 @@
 #define LG4FF_MODE_DFGT_IDX 4
 #define LG4FF_MODE_G27_IDX 5
 #define LG4FF_MODE_G29_IDX 6
-#define LG4FF_MODE_MAX_IDX 7
+#define LG4FF_MODE_G923_PS_IDX 7
+#define LG4FF_MODE_G923_IDX 8
+#define LG4FF_MODE_MAX_IDX 9
 
 #define LG4FF_MODE_NATIVE BIT(LG4FF_MODE_NATIVE_IDX)
 #define LG4FF_MODE_DFEX BIT(LG4FF_MODE_DFEX_IDX)
@@ -44,6 +46,8 @@
 #define LG4FF_MODE_DFGT BIT(LG4FF_MODE_DFGT_IDX)
 #define LG4FF_MODE_G27 BIT(LG4FF_MODE_G27_IDX)
 #define LG4FF_MODE_G29 BIT(LG4FF_MODE_G29_IDX)
+#define LG4FF_MODE_G923_PS BIT(LG4FF_MODE_G923_PS_IDX)
+#define LG4FF_MODE_G923 BIT(LG4FF_MODE_G923_IDX)
 
 #define LG4FF_DFEX_TAG "DF-EX"
 #define LG4FF_DFEX_NAME "Driving Force / Formula EX"
@@ -55,6 +59,10 @@
 #define LG4FF_G27_NAME "G27 Racing Wheel"
 #define LG4FF_G29_TAG "G29"
 #define LG4FF_G29_NAME "G29 Racing Wheel"
+#define LG4FF_G923_TAG "G923"
+#define LG4FF_G923_NAME "G923 Racing Wheel"
+#define LG4FF_G923_PS_TAG "G923"
+#define LG4FF_G923_PS_NAME "G923 Racing Wheel (Playstation mode)"
 #define LG4FF_DFGT_TAG "DFGT"
 #define LG4FF_DFGT_NAME "Driving Force GT"
 
@@ -228,6 +236,7 @@ static const struct lg4ff_wheel lg4ff_devices[] = {
 	{USB_DEVICE_ID_LOGITECH_DFGT_WHEEL,  lg4ff_wheel_effects, 40, 900, lg4ff_set_range_g25},
 	{USB_DEVICE_ID_LOGITECH_G27_WHEEL,   lg4ff_wheel_effects, 40, 900, lg4ff_set_range_g25},
 	{USB_DEVICE_ID_LOGITECH_G29_WHEEL,   lg4ff_wheel_effects, 40, 900, lg4ff_set_range_g25},
+	{USB_DEVICE_ID_LOGITECH_G923_WHEEL,  lg4ff_wheel_effects, 40, 900, lg4ff_set_range_g25},
 	{USB_DEVICE_ID_LOGITECH_MOMO_WHEEL2, lg4ff_wheel_effects, 40, 270, NULL},
 	{USB_DEVICE_ID_LOGITECH_WII_WHEEL,   lg4ff_wheel_effects, 40, 270, NULL}
 };
@@ -248,6 +257,12 @@ static const struct lg4ff_multimode_wheel lg4ff_multimode_wheels[] = {
 	{USB_DEVICE_ID_LOGITECH_G29_WHEEL,
 	 LG4FF_MODE_NATIVE | LG4FF_MODE_G29 | LG4FF_MODE_G27 | LG4FF_MODE_G25 | LG4FF_MODE_DFGT | LG4FF_MODE_DFP | LG4FF_MODE_DFEX,
 	 LG4FF_G29_TAG, LG4FF_G29_NAME},
+	{USB_DEVICE_ID_LOGITECH_G923_PS_WHEEL,
+	 LG4FF_MODE_G923_PS | LG4FF_MODE_G923,
+	 LG4FF_G923_PS_TAG, LG4FF_G923_PS_NAME},
+	{USB_DEVICE_ID_LOGITECH_G923_WHEEL,
+	 LG4FF_MODE_G923,
+	 LG4FF_G923_TAG, LG4FF_G923_NAME},
 };
 
 static const struct lg4ff_alternate_mode lg4ff_alternate_modes[] = {
@@ -258,6 +273,8 @@ static const struct lg4ff_alternate_mode lg4ff_alternate_modes[] = {
 	[LG4FF_MODE_DFGT_IDX] = {USB_DEVICE_ID_LOGITECH_DFGT_WHEEL, LG4FF_DFGT_TAG, LG4FF_DFGT_NAME},
 	[LG4FF_MODE_G27_IDX] = {USB_DEVICE_ID_LOGITECH_G27_WHEEL, LG4FF_G27_TAG, LG4FF_G27_NAME},
 	[LG4FF_MODE_G29_IDX] = {USB_DEVICE_ID_LOGITECH_G29_WHEEL, LG4FF_G29_TAG, LG4FF_G29_NAME},
+	[LG4FF_MODE_G923_PS_IDX] = {USB_DEVICE_ID_LOGITECH_G923_PS_WHEEL, LG4FF_G923_PS_TAG, LG4FF_G923_PS_NAME},
+	[LG4FF_MODE_G923_IDX] = {USB_DEVICE_ID_LOGITECH_G923_WHEEL, LG4FF_G923_TAG, LG4FF_G923_NAME},
 };
 
 /* Multimode wheel identificators */
@@ -303,10 +320,19 @@ static const struct lg4ff_wheel_ident_info lg4ff_g29_ident_info2 = {
 	USB_DEVICE_ID_LOGITECH_G29_WHEEL
 };
 
+static const struct lg4ff_wheel_ident_info lg4ff_g923_ident_info = {
+	LG4FF_MODE_G923_PS | LG4FF_MODE_G923,
+	0xff00,
+	0x3800,
+	USB_DEVICE_ID_LOGITECH_G923_WHEEL
+};
+
+
 /* Multimode wheel identification checklists */
 static const struct lg4ff_wheel_ident_info *lg4ff_main_checklist[] = {
 	&lg4ff_g29_ident_info,
 	&lg4ff_g29_ident_info2,
+	&lg4ff_g923_ident_info,
 	&lg4ff_dfgt_ident_info,
 	&lg4ff_g27_ident_info,
 	&lg4ff_g25_ident_info,
@@ -351,6 +377,12 @@ static const struct lg4ff_compat_mode_switch lg4ff_mode_switch_ext09_g29 = {
 	 0xf8, 0x09, 0x05, 0x01, 0x01, 0x00, 0x00}	/* Switch mode to G29 with detach */
 };
 
+static const struct lg4ff_compat_mode_switch lg4ff_mode_switch_ext09_g923 = {
+	2,
+	{0xf8, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00,	/* Revert mode upon USB reset */
+	 0xf8, 0x09, 0x07, 0x01, 0x01, 0x00, 0x00}	/* Switch mode to G923 with detach */
+};
+
 /* EXT_CMD1 - Understood by DFP, G25, G27 and DFGT */
 static const struct lg4ff_compat_mode_switch lg4ff_mode_switch_ext01_dfp = {
 	1,
@@ -361,6 +393,13 @@ static const struct lg4ff_compat_mode_switch lg4ff_mode_switch_ext01_dfp = {
 static const struct lg4ff_compat_mode_switch lg4ff_mode_switch_ext16_g25 = {
 	1,
 	{0xf8, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00}
+};
+
+/* 0x30 - PS mode - Understood by G923 PS */
+// Report ID must be 0x30
+static const struct lg4ff_compat_mode_switch lg4ff_mode_switch_30_g923 = {
+	1,
+	{0xf8, 0x09, 0x07, 0x01, 0x01, 0x00, 0x00}	/* Switch mode to G923 with detach */
 };
 
 static int timer_msecs = DEFAULT_TIMER_PERIOD;
@@ -401,7 +440,10 @@ static struct lg4ff_device_entry *lg4ff_get_device_entry(struct hid_device *hid)
 {
 	struct lg_drv_data *drv_data;
 	struct lg4ff_device_entry *entry;
-
+	if (!hid) {
+		hid_err(hid, "HID not found!\n");
+		return NULL;
+	}
 	drv_data = hid_get_drvdata(hid);
 	if (!drv_data) {
 		hid_err(hid, "Private driver data not found!\n");
@@ -415,6 +457,24 @@ static struct lg4ff_device_entry *lg4ff_get_device_entry(struct hid_device *hid)
 	}
 
 	return entry;
+}
+
+void lg4ff_send_cmd_with_id(struct lg4ff_device_entry *entry, u8 *cmd, u8 id) {
+	unsigned long flags;
+	s32 *value = entry->report->field[0]->value;
+
+	spin_lock_irqsave(&entry->report_lock, flags);
+	entry->report->id = id;
+	value[0] = cmd[0];
+	value[1] = cmd[1];
+	value[2] = cmd[2];
+	value[3] = cmd[3];
+	value[4] = cmd[4];
+	value[5] = cmd[5];
+	value[6] = cmd[6];
+	hid_hw_request(entry->hid, entry->report, HID_REQ_SET_REPORT);
+	spin_unlock_irqrestore(&entry->report_lock, flags);
+	DEBUG("send_cmd: %02X %02X %02X %02X %02X %02X %02X %02X\n", id, cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6]);
 }
 
 void lg4ff_send_cmd(struct lg4ff_device_entry *entry, u8 *cmd)
@@ -432,8 +492,7 @@ void lg4ff_send_cmd(struct lg4ff_device_entry *entry, u8 *cmd)
 	value[6] = cmd[6];
 	hid_hw_request(entry->hid, entry->report, HID_REQ_SET_REPORT);
 	spin_unlock_irqrestore(&entry->report_lock, flags);
-	if (unlikely(profile))
-		DEBUG("send_cmd: %02X %02X %02X %02X %02X %02X %02X", cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6]);
+	DEBUG("send_cmd: %02X %02X %02X %02X %02X %02X %02X", cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6]);
 }
 
 void lg4ff_update_slot(struct lg4ff_slot *slot, struct lg4ff_effect_parameters *parameters)
@@ -441,6 +500,8 @@ void lg4ff_update_slot(struct lg4ff_slot *slot, struct lg4ff_effect_parameters *
 	u8 original_cmd[7];
 	int d1;
 	int d2;
+	int k1;
+	int k2;
 	int s1;
 	int s2;
 
@@ -491,10 +552,22 @@ void lg4ff_update_slot(struct lg4ff_slot *slot, struct lg4ff_effect_parameters *
 				d2 = SCALE_VALUE_U16(((parameters->d2) + 0x8000) & 0xffff, 11);
 				s1 = parameters->k1 < 0;
 				s2 = parameters->k2 < 0;
+				k1 = abs(parameters->k1);
+				k2 = abs(parameters->k2);
+				if (k1 < 2048) {
+					d1 = 0;
+				} else {
+					k1 -= 2048;
+				}
+				if (k2 < 2048) {
+					d2 = 2047;
+				} else {
+					k2 -= 2048;
+				}
 				slot->current_cmd[1] = 0x0b;
 				slot->current_cmd[2] = d1 >> 3;
 				slot->current_cmd[3] = d2 >> 3;
-				slot->current_cmd[4] = (SCALE_COEFF(parameters->k2, 4) << 4) + SCALE_COEFF(parameters->k1, 4);
+				slot->current_cmd[4] = (SCALE_COEFF(k2, 4) << 4) + SCALE_COEFF(k1, 4);
 				slot->current_cmd[5] = ((d2 & 7) << 5) + ((d1 & 7) << 1) + (s2 << 4) + s1;
 				slot->current_cmd[6] = SCALE_VALUE_U16(parameters->clip, 8);
 				break;
@@ -618,29 +691,21 @@ static __always_inline int lg4ff_calculate_periodic(struct lg4ff_effect_state *s
 static __always_inline void lg4ff_calculate_spring(struct lg4ff_effect_state *state, struct lg4ff_effect_parameters *parameters)
 {
 	struct ff_condition_effect *condition = &state->effect.u.condition[0];
-	int d1;
-	int d2;
 
-	d1 = condition->center - condition->deadband / 2;
-	d2 = condition->center + condition->deadband / 2;
-	if (d1 < parameters->d1) {
-		parameters->d1 = d1;
-	}
-	if (d2 > parameters->d2) {
-		parameters->d2 = d2;
-	}
-	parameters->k1 += condition->left_coeff;
-	parameters->k2 += condition->right_coeff;
-	parameters->clip = max(parameters->clip, (unsigned)max(condition->left_saturation, condition->right_saturation));
+	parameters->d1 = ((int)condition->center) - condition->deadband / 2;
+	parameters->d2 = ((int)condition->center) + condition->deadband / 2;
+	parameters->k1 = condition->left_coeff;
+	parameters->k2 = condition->right_coeff;
+	parameters->clip = (unsigned)condition->right_saturation;
 }
 
 static __always_inline void lg4ff_calculate_resistance(struct lg4ff_effect_state *state, struct lg4ff_effect_parameters *parameters)
 {
 	struct ff_condition_effect *condition = &state->effect.u.condition[0];
 
-	parameters->k1 += condition->left_coeff;
-	parameters->k2 += condition->right_coeff;
-	parameters->clip = max(parameters->clip, (unsigned)max(condition->left_saturation, condition->right_saturation));
+	parameters->k1 = condition->left_coeff;
+	parameters->k2 = condition->right_coeff;
+	parameters->clip = (unsigned)condition->right_saturation;
 }
 
 static __always_inline struct ff_envelope *lg4ff_effect_envelope(struct ff_effect *effect)
@@ -678,10 +743,10 @@ static __always_inline void lg4ff_update_state(struct lg4ff_effect_state *state,
 
 	if (__test_and_clear_bit(FF_EFFECT_UPDATING, &state->flags)) {
 		__clear_bit(FF_EFFECT_PLAYING, &state->flags);
-		state->play_at = state->start_at + effect->replay.delay;
+		state->play_at = state->updated_at + effect->replay.delay;
 		state->direction_gain = fixp_sin16(effect->direction * 360 / 0x10000);
 		if (effect->replay.length) {
-			state->stop_at = state->play_at + effect->replay.length;
+			state->stop_at = state->updated_at + effect->replay.length;
 		}
 		if (effect->type == FF_PERIODIC) {
 			state->phase_adj = state->phase;
@@ -806,17 +871,16 @@ static __always_inline int lg4ff_timer(struct lg4ff_device_entry *entry)
 	}
 
 	spin_unlock_irqrestore(&entry->timer_lock, flags);
-
-	parameters[0].level = (long)parameters[0].level * gain / 0xffff;
+	parameters[0].level = div_s64((long long)parameters[0].level * gain, 0xffff);
 	parameters[1].clip = parameters[1].clip * spring_level / 100;
 	parameters[2].clip = parameters[2].clip * damper_level / 100;
 	parameters[3].clip = parameters[3].clip * friction_level / 100;
 
 	ffb_level = abs(parameters[0].level);
 	for (i = 1; i < 4; i++) {
-		parameters[i].k1 = parameters[i].k1 * gain / 0xffff;
-		parameters[i].k2 = parameters[i].k2 * gain / 0xffff;
-		parameters[i].clip = parameters[i].clip * gain / 0xffff;
+		parameters[i].k1 = div_s64((long long)parameters[i].k1 * gain, 0xffff);
+		parameters[i].k2 = div_s64((long long)parameters[i].k2 * gain, 0xffff);
+		parameters[i].clip = parameters[i].clip * gain / 0xff;
 		ffb_level += parameters[i].clip * 0x7fff / 0xffff;
 	}
 	if (ffb_level > entry->peak_ffb_level) {
@@ -1099,6 +1163,7 @@ int lg4ff_raw_event(struct hid_device *hdev, struct hid_report *report,
 			break;
 		case USB_DEVICE_ID_LOGITECH_DFGT_WHEEL:
 		case USB_DEVICE_ID_LOGITECH_G29_WHEEL:
+		case USB_DEVICE_ID_LOGITECH_G923_WHEEL:
 			offset = 6;
 			break;
 		case USB_DEVICE_ID_LOGITECH_WII_WHEEL:
@@ -1121,6 +1186,7 @@ int lg4ff_raw_event(struct hid_device *hdev, struct hid_report *report,
 				offset = 5;
 				break;
 			case USB_DEVICE_ID_LOGITECH_G29_WHEEL:
+			case USB_DEVICE_ID_LOGITECH_G923_WHEEL:
 				offset = 6;
 				break;
 			default:
@@ -1405,6 +1471,15 @@ static const struct lg4ff_compat_mode_switch *lg4ff_get_mode_switch_command(cons
 			return NULL;
 		}
 		break;
+	case USB_DEVICE_ID_LOGITECH_G923_PS_WHEEL:
+		switch (target_product_id) {
+		case USB_DEVICE_ID_LOGITECH_G923_WHEEL:
+			return &lg4ff_mode_switch_30_g923;
+		/* We can only switch from PS mode to Classic. */
+		default:
+			return NULL;
+		}
+		break;
 	case USB_DEVICE_ID_LOGITECH_DFGT_WHEEL:
 		switch (target_product_id) {
 		case USB_DEVICE_ID_LOGITECH_WHEEL:
@@ -1442,6 +1517,30 @@ static int lg4ff_switch_compatibility_mode(struct hid_device *hid, const struct 
 			cmd[j] = s->cmd[j + (7*i)];
 
 		lg4ff_send_cmd(entry, cmd);
+	}
+	hid_hw_wait(hid);
+	return 0;
+}
+
+/* For switching from PS mode we need to set report id to 0x30 */
+static int lg4ff_switch_from_ps_mode(struct hid_device *hid, const struct lg4ff_compat_mode_switch *s)
+{
+	struct lg4ff_device_entry *entry;
+	u8 cmd[7];
+	u8 i;
+
+	entry = lg4ff_get_device_entry(hid);
+	if (entry == NULL) {
+		return -EINVAL;
+	}
+
+	for (i = 0; i < s->cmd_count; i++) {
+		u8 j;
+
+		for (j = 0; j < 7; j++)
+			cmd[j] = s->cmd[j + (7*i)];
+
+		lg4ff_send_cmd_with_id(entry, cmd, 0x30);
 	}
 	hid_hw_wait(hid);
 	return 0;
@@ -1508,6 +1607,12 @@ static ssize_t lg4ff_alternate_modes_store(struct device *dev, struct device_att
 		return -ENOMEM;
 
 	i = strlen(lbuf);
+
+	if (i == 0) {
+		kfree(lbuf);
+		return -EINVAL;
+	}
+
 	if (lbuf[i-1] == '\n') {
 		if (i == 1) {
 			kfree(lbuf);
@@ -1962,7 +2067,7 @@ static void lg4ff_init_leds(struct hid_device *hid, struct lg4ff_device_entry *e
 {
 	int error, j;
 
-	/* register led subsystem - G27/G29 only */
+	/* register led subsystem - G27/G29/G923 only */
 	entry->wdata.led_state = 0;
 	for (j = 0; j < 5; j++)
 		entry->wdata.led[j] = NULL;
@@ -2085,6 +2190,30 @@ static int lg4ff_handle_multimode_wheel(struct hid_device *hid, u16 *real_produc
 		return LG4FF_MMODE_SWITCHED;
 	}
 
+	/* Switch from "G923 PS" mode to native mode automatically. */
+	/* Users could use lg4ff_no_autoswitch option if they want to manually change modes */
+	if ((reported_product_id == USB_DEVICE_ID_LOGITECH_G923_PS_WHEEL) &&
+		reported_product_id != *real_product_id) {
+		const struct lg4ff_compat_mode_switch *s = &lg4ff_mode_switch_30_g923;
+		if (lg4ff_no_autoswitch) {
+			hid_err(hid, "This device should switch mode. Load the \"hid_logitech\" module with \"lg4ff_no_autoswitch=0\" parameter set and try again.\n");
+			return -EINVAL;
+		}
+		if (!s) {
+			hid_err(hid, "Invalid product id %X\n", *real_product_id);
+			return LG4FF_MMODE_NOT_MULTIMODE;
+		}
+
+		ret = lg4ff_switch_from_ps_mode(hid, s);
+		if (ret) {
+			/* Wheel could not have been switched to Classic mode,
+			 * leave it in "PS" mode and continue */
+			hid_err(hid, "Unable to switch wheel mode, errno %d\n", ret);
+			return LG4FF_MMODE_IS_MULTIMODE;
+		}
+		return LG4FF_MMODE_SWITCHED;
+	}
+
 	return LG4FF_MMODE_IS_MULTIMODE;
 }
 
@@ -2094,8 +2223,8 @@ static void lg4ff_destroy(struct ff_device *ff)
 
 int lg4ff_init(struct hid_device *hid)
 {
-	struct hid_input *hidinput = list_entry(hid->inputs.next, struct hid_input, list);
-	struct input_dev *dev = hidinput->input;
+	struct hid_input *hidinput;
+	struct input_dev *dev;
 	struct list_head *report_list = &hid->report_enum[HID_OUTPUT_REPORT].report_list;
 	struct hid_report *report = list_entry(report_list->next, struct hid_report, list);
 	const struct usb_device_descriptor *udesc = &(hid_to_usb_dev(hid)->descriptor);
@@ -2107,6 +2236,13 @@ int lg4ff_init(struct hid_device *hid)
 	int mmode_ret, mmode_idx = -1;
 	u16 real_product_id;
 	struct ff_device *ff;
+
+	if (list_empty(&hid->inputs)) {
+		hid_err(hid, "no inputs found\n");
+		return -ENODEV;
+	}
+	hidinput = list_entry(hid->inputs.next, struct hid_input, list);
+	dev = hidinput->input;
 
 	/* Check that the report looks ok */
 	if (!hid_validate_values(hid, HID_OUTPUT_REPORT, 0, 0, 7))
@@ -2212,7 +2348,8 @@ int lg4ff_init(struct hid_device *hid)
 
 #ifdef CONFIG_LEDS_CLASS
 	if (lg4ff_devices[i].product_id == USB_DEVICE_ID_LOGITECH_G27_WHEEL ||
-			lg4ff_devices[i].product_id == USB_DEVICE_ID_LOGITECH_G29_WHEEL) {
+			lg4ff_devices[i].product_id == USB_DEVICE_ID_LOGITECH_G29_WHEEL ||
+			lg4ff_devices[i].product_id == USB_DEVICE_ID_LOGITECH_G923_WHEEL) {
 		entry->has_leds = 1;
 		lg4ff_init_leds(hid, entry, i);
 	} else {
